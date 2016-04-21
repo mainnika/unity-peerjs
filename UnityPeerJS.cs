@@ -23,11 +23,11 @@ public static class UnityPeerJS
 
         private readonly int _peerIndex;
 
-        public Peer(string key, string id = null)
+        public Peer(string key, string id, string host, int port)
         {
             Init();
 
-            _peerIndex = OpenPeer(key, id);
+            _peerIndex = OpenPeer(key, id, host, port);
         }
 
         public event Action OnOpen;
@@ -220,7 +220,7 @@ public static class UnityPeerJS
     private static extern void Init();
 
     [DllImport("__Internal")]
-    private static extern int OpenPeer(string key, string id);
+    private static extern int OpenPeer(string key, string id, string hostStr, int port);
 
     [DllImport("__Internal")]
     private static extern void Connect(int peerInstance, string remoteId);
@@ -274,7 +274,7 @@ public static class UnityPeerJS
         throw new NotImplementedException();
     }
 
-    private static int OpenPeer(string keyStr, string idStr)
+    private static int OpenPeer(string keyStr, string idStr, string hostStr, int port)
     {
         throw new NotImplementedException();
     }
