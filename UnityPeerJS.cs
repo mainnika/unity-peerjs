@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using UnityEngine;
 
 public static class UnityPeerJS
 {
@@ -54,16 +55,20 @@ public static class UnityPeerJS
                     }
                     case EventType.Connected:
                     {
-                        var buffer = new byte[256];
+                        var size = PeekReceivedEventSize(_peerIndex);
+                        var buffer = new byte[size];
                         var pinnedBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
-                        var connIndex = PopConnectedEvent(_peerIndex, pinnedBuffer.AddrOfPinnedObject(), buffer.Length);
+                        var connIndex = PopConnectedEvent(_peerIndex, pinnedBuffer.AddrOfPinnedObject(), size);
 
                         pinnedBuffer.Free();
 
-                        var remoteId = DecodeUtf16Z(buffer);
+                        var remoteId = Encoding.UTF8.GetString(buffer);
 
                         _connections[connIndex] = new Connection(this, connIndex, remoteId);
+
+                        Debug.Log(string.Format("Connected, index: {0}, buffer len: {1}, id: \"{2}\", id len {3}",
+                            connIndex,
+                            buffer.Length, remoteId, remoteId.Length));
 
                         if (OnConnection != null)
                             OnConnection(_connections[connIndex]);
@@ -73,15 +78,18 @@ public static class UnityPeerJS
                     case EventType.Received:
                     {
                         var size = PeekReceivedEventSize(_peerIndex);
-
                         var buffer = new byte[size];
                         var pinnedBuffer = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-
                         var connIndex = PopReceivedEvent(_peerIndex, pinnedBuffer.AddrOfPinnedObject(), size);
+                        var str = Encoding.UTF8.GetString(buffer);
 
                         pinnedBuffer.Free();
 
-                        _connections[connIndex].EmitOnData(DecodeUtf16Z(buffer));
+                        Debug.Log(string.Format("Received, index: {0}, buffer len: {1}, str: \"{2}\", str len {3}",
+                            connIndex,
+                            buffer.Length, str, str.Length));
+
+                        _connections[connIndex].EmitOnData(str);
                         break;
                     }
 
@@ -187,7 +195,7 @@ public static class UnityPeerJS
             public event Action<string> OnData;
             public event Action OnClose;
 
-            public Peer Peer { get; set; }
+            public Peer Peer { get; set;  }
             public string RemoteId { get; set; }
 
             public void Send(string str)
